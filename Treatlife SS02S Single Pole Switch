@@ -1,0 +1,124 @@
+substitutions:
+  device_name: bedroom-2-outlet-light
+  friendly_name: Bedroom 2 Outlet Light
+  comment: Treatlife SS02S Single Pole Switch
+  icon: "mdi:floor-lamp-outline"
+    
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  comment: ${comment}
+
+bk72xx:
+  board: generic-bk7231t-qfn32-tuya
+  framework:
+    version: dev
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+#tuya:
+#  time_id: homeassistant_time
+
+# Enable logging
+logger:
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  domain: .diazhome.net
+
+  power_save_mode: NONE
+
+  # Enable fallback hotspot in case wifi connection fails
+  #ap:
+  #  ssid: ${device_name}
+  #  password: !secret ap_password
+
+web_server:
+captive_portal:
+mdns:
+
+button:
+- platform: restart
+  name: Restart
+
+debug:
+  update_interval: 30s
+
+text_sensor:
+  - platform: debug
+    reset_reason:
+      name: Reset Reason
+
+  - platform: libretiny
+    version:
+      name: LibreTiny Version
+
+  - platform: wifi_info
+    ip_address:
+      name: IP Address
+    mac_address:
+      name: MAC Address
+
+output:
+  - platform: gpio
+    id: switch_output
+    pin: P24
+
+  - platform: gpio
+    id: white_led_output
+    pin:
+      number: P9
+      inverted: yes
+
+light:
+  - platform: binary
+    id: light_1
+    name: 'None'
+    output: switch_output
+    icon: ${icon}
+    on_turn_on:
+      - light.turn_off: white_led
+    on_turn_off:
+      - light.turn_on: white_led
+    restore_mode: RESTORE_DEFAULT_OFF
+
+  - platform: binary
+    id: white_led
+    output: white_led_output
+
+binary_sensor:
+  - platform: gpio
+    id: button_1
+    name: Button
+    pin:
+      number: P6
+      inverted: yes
+      mode: INPUT_PULLUP
+    on_press:
+      - light.toggle: light_1
+
+status_led:
+  # Red LED
+  pin:
+    number: P8
+    inverted: yes
+
+sensor:
+  - platform: wifi_signal
+    name: WiFi Signal
+    update_interval: 60s
+
+  - platform: uptime
+    name: Uptime
+    update_interval: 60s
