@@ -1,0 +1,118 @@
+substitutions:
+  device_name: kitchen-ceiling-fan
+  friendly_name: Kitchen Ceiling Fan
+  comment: TreatLife DS03 Fan Controller
+  icon_fan: "mdi:ceiling-fan"
+  icon_light: "mdi:ceiling-fan-light"
+  
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  comment: ${comment}
+
+bk72xx:
+  board: generic-bk7231t-qfn32-tuya
+  framework:
+    version: dev
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+tuya:
+  time_id: homeassistant_time
+
+# Enable logging
+logger:
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  domain: .diazhome.net
+
+  manual_ip:
+    static_ip: 10.27.80.57
+    gateway: 10.27.80.1
+    subnet: 255.255.254.0
+    dns1: 10.27.80.1
+
+  # Enable fallback hotspot in case wifi connection fails
+  ap:
+    ssid: ${device_name}
+    password: !secret ap_password
+
+web_server:
+captive_portal:
+mdns:
+
+button:
+- platform: restart
+  name: Restart
+
+debug:
+  update_interval: 30s
+
+text_sensor:
+  - platform: debug
+    reset_reason:
+      name: Reset Reason
+
+  - platform: libretiny
+    version:
+      name: LibreTiny Version
+
+  - platform: wifi_info
+    ip_address:
+      name: IP Address
+    mac_address:
+      name: MAC Address
+
+uart:
+  rx_pin: RX1
+  tx_pin: TX1
+  baud_rate: 115200
+
+sensor:
+  - platform: wifi_signal
+    name: WiFi Signal
+    update_interval: 60s
+
+  - platform: uptime
+    name: Uptime
+    update_interval: 60s
+
+light:
+  - platform: "tuya"
+    name: Light
+    icon: ${icon_light}
+    dimmer_datapoint: 10
+    switch_datapoint: 9
+# change the dimmer_datapoint to 6 and switch_datapoint to 101 if these do not work - check the esphome logs and press the buttons on the switch faceplate to confirm
+    min_value: 100
+    max_value: 1000
+
+fan:
+  - platform: "tuya"
+    name: Speed
+    icon: ${icon_fan}
+    switch_datapoint: 1
+    speed_datapoint: 3
+    speed_count: 4
+
+select:
+  - platform: "tuya"
+    id: "dimmer_mode"
+    name: "Dimming Mode"
+    enum_datapoint: 106
+    options:
+      0: Mode 1 # Index 0
+      1: Mode 2 # Index 1
+      2: Mode 3 # Index 2
