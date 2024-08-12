@@ -1,0 +1,124 @@
+substitutions:
+  device_name: bedroom-2-balcony-light-switch
+  friendly_name: Bedroom 2 Balcony Light Switch
+  comment: Treatlife SS02S Single Pole Switch (Smart Bulb Mode)
+  icon: "mdi:light-recessed"
+  icon_relay: "mdi:toggle-switch"
+    
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  comment: ${comment}
+
+bk72xx:
+  board: generic-bk7231t-qfn32-tuya
+  framework:
+    version: dev
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+#tuya:
+#  time_id: homeassistant_time
+
+# Enable logging
+logger:
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  domain: .diazhome.net
+
+  manual_ip:
+    static_ip: 10.27.80.70
+    gateway: 10.27.80.1
+    subnet: 255.255.254.0
+    dns1: 10.27.80.1
+
+  power_save_mode: NONE
+
+  #Enable fallback hotspot in case wifi connection fails
+  ap:
+    ssid: ${device_name}
+    password: !secret ap_password
+
+web_server:
+captive_portal:
+mdns:
+
+button:
+- platform: restart
+  name: Restart
+
+debug:
+  update_interval: 30s
+
+text_sensor:
+  - platform: debug
+    reset_reason:
+      name: Reset Reason
+
+  - platform: libretiny
+    version:
+      name: LibreTiny Version
+
+  - platform: wifi_info
+    ip_address:
+      name: IP Address
+    mac_address:
+      name: MAC Address
+
+switch:
+  - platform: gpio
+    id: relay_1
+    pin: P24
+    name: 'Relay'
+    icon: ${icon_relay}
+    on_turn_on:
+      - switch.turn_on: white_led
+    on_turn_off:
+      - switch.turn_off: white_led
+    restore_mode: ALWAYS_ON
+
+  - platform: gpio
+    id: white_led
+    name: 'None'
+    icon: ${icon}
+    pin:
+      number: P9
+      inverted: false
+
+binary_sensor:
+  - platform: gpio
+    id: button_1
+    name: Button
+    pin:
+      number: P6
+      inverted: yes
+      mode: INPUT_PULLUP
+    on_press:
+      - switch.toggle: white_led
+
+status_led:
+  # Red LED
+  pin:
+    number: P8
+    inverted: yes
+
+sensor:
+  - platform: wifi_signal
+    name: WiFi Signal
+    update_interval: 60s
+
+  - platform: uptime
+    name: Uptime
+    update_interval: 60s
