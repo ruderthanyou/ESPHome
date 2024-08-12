@@ -1,0 +1,78 @@
+substitutions:
+  device_name: basement-office-bt-proxy
+  friendly_name: Basement Office BT Proxy
+  comment: Olimex ESP32-POE-ISO-EA
+  icon: "mdi:bluetooth"
+  
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  comment: ${comment}
+  
+  project:
+    name: esphome.bluetooth-proxy
+    version: "1.0"
+
+esp32:
+  board: esp32-poe-iso
+  framework:
+    type: esp-idf
+
+# Enable logging
+logger:
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+web_server:
+mdns:
+
+debug:
+  update_interval: 30s
+
+text_sensor:
+  - platform: debug
+    reset_reason:
+      name: Reset Reason
+
+sensor:
+  - platform: uptime
+    name: Uptime
+    update_interval: 60s
+
+ethernet:
+  type: LAN8720
+  mdc_pin: GPIO23
+  mdio_pin: GPIO18
+  clk_mode: GPIO17_OUT
+  phy_addr: 0
+  power_pin: GPIO12
+  domain: .diazhome.net
+
+  manual_ip:
+    static_ip: 10.27.80.49
+    gateway: 10.27.80.1
+    subnet: 255.255.254.0
+    dns1: 10.27.80.1
+
+dashboard_import:
+  package_import_url: github://esphome/firmware/bluetooth-proxy/olimex-esp32-poe-iso.yaml@main
+
+esp32_ble_tracker:
+  scan_parameters:
+    interval: 1100ms
+    window: 1100ms
+    active: true
+
+bluetooth_proxy:
+  active: true
+
+button:
+  - platform: safe_mode
+    name: Safe Mode Boot
+    entity_category: diagnostic
