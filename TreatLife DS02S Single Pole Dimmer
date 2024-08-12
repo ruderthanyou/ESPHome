@@ -1,0 +1,152 @@
+substitutions:
+  device_name: back-stair-light
+  friendly_name: Back Stair Light
+  comment: TreatLife DS02S Single Pole Dimmer
+  icon: "mdi:light-recessed"
+  
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  comment: ${comment}
+  on_boot:
+    priority: 600
+    then:
+      lambda: |-
+        int value = 0;
+        auto call = id(led_indicator).make_call();
+        call.set_value(value);
+        call.perform();
+        id(light1).remote_values.set_brightness(100);
+
+bk72xx:
+  board: generic-bk7231t-qfn32-tuya
+  framework:
+    version: dev
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+tuya:
+  time_id: homeassistant_time
+
+# Enable logging
+logger:
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  domain: .diazhome.net
+
+  manual_ip:
+    static_ip: 10.27.80.72
+    gateway: 10.27.80.1
+    subnet: 255.255.254.0
+    dns1: 10.27.80.1
+
+  power_save_mode: none
+
+  # Enable fallback hotspot in case wifi connection fails
+  ap:
+    ssid: ${device_name}
+    password: !secret ap_password
+
+web_server:
+captive_portal:
+mdns:
+
+button:
+- platform: restart
+  name: Restart
+
+debug:
+  update_interval: 30s
+
+text_sensor:
+  - platform: debug
+    reset_reason:
+      name: Reset Reason
+
+  - platform: libretiny
+    version:
+      name: LibreTiny Version
+
+  - platform: wifi_info
+    ip_address:
+      name: IP Address
+    mac_address:
+      name: MAC Address
+
+uart:
+  rx_pin: RX1
+  tx_pin: TX1
+  baud_rate: 115200
+
+number:
+  - platform: "tuya"
+    id: "led_indicator"
+    number_datapoint: 104
+    min_value: 0
+    max_value: 1
+    step: 1
+
+light:
+  - platform: "tuya"
+    id: light1
+    name: "None"
+    icon: ${icon}
+    dimmer_datapoint: 2
+    switch_datapoint: 1
+    min_value: 100
+    max_value: 1000
+    restore_mode: RESTORE_AND_ON
+
+sensor:
+  - platform: wifi_signal
+    name: WiFi Signal
+    update_interval: 60s
+
+  - platform: uptime
+    name: Uptime
+    update_interval: 60s
+
+select:
+  - platform: "tuya"
+    id: "dimmer_mode"
+    name: "Dimming Mode"
+    enum_datapoint: 4
+    options:
+      0: LED # Index 0
+      1: Incandescent # Index 1
+      2: Halogen # Index 2
+  - platform: template
+    name: "LED indicator vs load"
+    optimistic: true
+    options:
+      - Follow
+      - Opposite
+    set_action:
+      then:
+        lambda: |-
+          int value = 0;
+          if( x == "Opposite" ) { value = 0; } else if( x == "Follow") { value = 1; } 
+          auto call = id(led_indicator).make_call();
+          call.set_value(value);
+          call.perform();
+
+#1 - switch
+#2 - dimmer = 763
+#3 - brightness min = 100 Diming Range 10%= 100, 100%=1000
+#4 - dimming mode = LED, incandescent, halogen
+#101 - led_bright low/ wake_up value=AAAA
+#102 - count_down value=0
+#103 - bright_value_3 = 10
+#104 - led indicator
+#105 - random time
